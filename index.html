@@ -1,1 +1,273 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Tombol Kabur - Berani Coba?</title>
+<style>
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body {
+    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+    min-height: 100vh;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: linear-gradient(135deg, #ff9a56 0%, #ff6a88 50%, #a86ce8 100%);
+    padding: 20px;
+    overflow: hidden;
+  }
+  .card {
+    background: #fff;
+    border-radius: 18px;
+    padding: 32px;
+    max-width: 560px;
+    width: 100%;
+    box-shadow: 0 20px 50px rgba(0,0,0,0.35);
+    text-align: center;
+    position: relative;
+  }
+  h1 { font-size: 22px; color: #333; margin-bottom: 4px; }
+  .subtitle { color: #888; font-size: 14px; margin-bottom: 8px; }
+  .taunt {
+    font-size: 14px;
+    font-weight: 700;
+    color: #ff6a88;
+    min-height: 22px;
+    margin-bottom: 10px;
+  }
+  .arena {
+    position: relative;
+    width: 100%;
+    height: 320px;
+    background: repeating-linear-gradient(45deg, #fef6f0, #fef6f0 10px, #fff 10px, #fff 20px);
+    border-radius: 14px;
+    overflow: hidden;
+    border: 3px dashed #ffcaa8;
+  }
+  #targetBtn {
+    position: absolute;
+    padding: 14px 26px;
+    border: none;
+    border-radius: 30px;
+    background: linear-gradient(135deg, #ff6a88, #a86ce8);
+    color: #fff;
+    font-weight: 700;
+    font-size: 15px;
+    cursor: pointer;
+    box-shadow: 0 8px 18px rgba(168,108,232,0.4);
+    transition: top 0.18s ease, left 0.18s ease, transform 0.15s ease;
+    user-select: none;
+    white-space: nowrap;
+  }
+  #targetBtn:active { transform: scale(0.95); }
+  .stats {
+    display: flex;
+    justify-content: space-between;
+    margin-top: 12px;
+    font-size: 13px;
+    color: #999;
+    padding: 0 4px;
+  }
+  .progress-dots {
+    display: flex;
+    justify-content: center;
+    gap: 8px;
+    margin-top: 14px;
+  }
+  .dot {
+    width: 14px; height: 14px;
+    border-radius: 50%;
+    background: #eee;
+    transition: background 0.3s;
+  }
+  .dot.filled { background: linear-gradient(135deg, #ff6a88, #a86ce8); }
+  .success-screen { display: none; }
+  .success-screen.show { display: block; animation: fadeIn 0.5s ease; }
+  @keyframes fadeIn { from { opacity: 0; transform: translateY(10px);} to { opacity: 1; transform: translateY(0);} }
+  .trophy { font-size: 56px; margin-bottom: 10px; }
+  .success-screen h2 { color: #28a745; margin-bottom: 8px; }
+  .success-screen p { color: #666; margin-bottom: 22px; font-size: 14px; }
+  .drive-btn {
+    display: inline-block;
+    background: linear-gradient(135deg, #34a853, #4285f4);
+    color: #fff;
+    padding: 14px 32px;
+    border-radius: 30px;
+    text-decoration: none;
+    font-weight: 600;
+    font-size: 15px;
+    box-shadow: 0 8px 20px rgba(52,168,83,0.35);
+    transition: transform 0.2s ease;
+  }
+  .drive-btn:hover { transform: translateY(-2px); }
+  .game-screen.hide { display: none; }
+</style>
+</head>
+<body>
 
+<div class="card">
+
+  <div class="game-screen" id="gameScreen">
+    <h1>😈 Tangkap Tombolnya!</h1>
+    <p class="subtitle">Klik tombolnya <b id="targetCount">5</b> kali kalau bisa... kalau bisa ya~</p>
+    <div class="taunt" id="taunt">Ayo coba klik aku!</div>
+    <div class="arena" id="arena">
+      <button id="targetBtn">Klik Aku!</button>
+    </div>
+    <div class="stats">
+      <span id="scoreText">Berhasil: 0 / 5</span>
+      <span id="failText">Kabur: 0x</span>
+    </div>
+    <div class="progress-dots" id="dots"></div>
+  </div>
+
+  <div class="success-screen" id="successScreen">
+    <div class="trophy">🎉</div>
+    <h2>Yaaah, akhirnya ketangkep juga!</h2>
+    <p id="successDetail">Tombolnya nyerah. Silakan buka file laporannya.</p>
+    <a href="https://docs.google.com/spreadsheets/d/13F8pgoeKRpAP_CFtGr93gYJCpSGpxa5i/edit?usp=sharing&ouid=111151620146553094780&rtpof=true&sd=true" target="_blank" rel="noopener" class="drive-btn">
+      📊 Buka Laporan
+    </a>
+  </div>
+
+</div>
+
+<script>
+const arena = document.getElementById('arena');
+const btn = document.getElementById('targetBtn');
+const tauntEl = document.getElementById('taunt');
+const scoreText = document.getElementById('scoreText');
+const failText = document.getElementById('failText');
+const dotsContainer = document.getElementById('dots');
+const gameScreen = document.getElementById('gameScreen');
+const successScreen = document.getElementById('successScreen');
+
+const NEEDED = 5;
+let score = 0;
+let fails = 0;
+let dodgeRadius = 90; // seberapa dekat mouse dianggap "mengancam"
+
+const taunts = [
+  "Ayo coba klik aku!",
+  "Yah kurang cepet~",
+  "Hihi, meleset lagi!",
+  "Kejar terus dong 😏",
+  "Deket dikit lagi tuh...",
+  "Wkwk lucu ngejar-ngejar",
+  "Sabar dikit lagi ya~",
+  "Jangan nyerah dong!",
+  "Ayo semangat, dikit lagi!",
+  "Ini beneran mepet lho!"
+];
+
+function initDots() {
+  dotsContainer.innerHTML = '';
+  for (let i = 0; i < NEEDED; i++) {
+    const d = document.createElement('div');
+    d.className = 'dot';
+    dotsContainer.appendChild(d);
+  }
+}
+initDots();
+
+function updateDots() {
+  const dots = dotsContainer.querySelectorAll('.dot');
+  dots.forEach((d, i) => {
+    d.classList.toggle('filled', i < score);
+  });
+}
+
+function randomTaunt() {
+  tauntEl.textContent = taunts[Math.floor(Math.random() * taunts.length)];
+}
+
+function moveButtonRandom() {
+  const arenaRect = arena.getBoundingClientRect();
+  const btnW = btn.offsetWidth || 110;
+  const btnH = btn.offsetHeight || 46;
+  const maxX = arena.clientWidth - btnW - 8;
+  const maxY = arena.clientHeight - btnH - 8;
+  const newX = Math.max(8, Math.random() * maxX);
+  const newY = Math.max(8, Math.random() * maxY);
+  btn.style.left = newX + 'px';
+  btn.style.top = newY + 'px';
+}
+
+// posisi awal di tengah
+function placeInitial() {
+  const maxX = arena.clientWidth - btn.offsetWidth - 8;
+  const maxY = arena.clientHeight - btn.offsetHeight - 8;
+  btn.style.left = (maxX / 2) + 'px';
+  btn.style.top = (maxY / 2) + 'px';
+}
+window.addEventListener('load', placeInitial);
+setTimeout(placeInitial, 50);
+
+// makin sering "kabur" duluan sebelum diklik, makin susah seiring skor naik
+arena.addEventListener('mousemove', (e) => {
+  if (score >= NEEDED) return;
+  const arenaRect = arena.getBoundingClientRect();
+  const btnRect = btn.getBoundingClientRect();
+  const mouseX = e.clientX - arenaRect.left;
+  const mouseY = e.clientY - arenaRect.top;
+  const btnCenterX = btnRect.left - arenaRect.left + btnRect.width / 2;
+  const btnCenterY = btnRect.top - arenaRect.top + btnRect.height / 2;
+  const dist = Math.hypot(mouseX - btnCenterX, mouseY - btnCenterY);
+
+  // semakin tinggi skor, radius kabur makin lebar (makin ngeselin)
+  const currentRadius = dodgeRadius + score * 12;
+
+  if (dist < currentRadius) {
+    // kemungkinan kabur (tidak 100% biar tetap winnable)
+    const escapeChance = 0.85;
+    if (Math.random() < escapeChance) {
+      moveButtonRandom();
+      if (Math.random() < 0.5) randomTaunt();
+    }
+  }
+});
+
+// juga kabur dikit tiap beberapa saat biar makin jahil
+setInterval(() => {
+  if (score < NEEDED && Math.random() < 0.15) {
+    moveButtonRandom();
+  }
+}, 1500);
+
+btn.addEventListener('click', (e) => {
+  e.stopPropagation();
+  if (score >= NEEDED) return;
+
+  // beri kesempatan klik berhasil, tapi kadang tetap kabur dulu buat ngeselin (sebelum skor tinggi)
+  const successChance = 0.55 + score * 0.05; // makin ke akhir makin gampang biar ga frustasi
+  if (Math.random() < successChance) {
+    score++;
+    scoreText.textContent = `Berhasil: ${score} / ${NEEDED}`;
+    updateDots();
+    tauntEl.textContent = ['Yes kena!', 'Mantap!', 'Sedikit lagi!', 'Terus gitu!'][Math.floor(Math.random()*4)];
+    btn.textContent = score >= NEEDED ? 'Ketangkep!' : ['Klik Aku!','Lagi!','Sini lagi!','Ayo lagi!'][score % 4];
+    if (score >= NEEDED) {
+      winGame();
+      return;
+    }
+  } else {
+    fails++;
+    failText.textContent = `Kabur: ${fails}x`;
+    tauntEl.textContent = 'Yaah meleset, coba lagi!';
+  }
+  moveButtonRandom();
+});
+
+function winGame() {
+  tauntEl.textContent = '🎉 Ketangkep juga akhirnya!';
+  setTimeout(() => {
+    gameScreen.classList.add('hide');
+    successScreen.classList.add('show');
+    document.getElementById('successDetail').textContent =
+      `Butuh ${fails} kali kaburan sebelum akhirnya nyerah. Selamat!`;
+  }, 500);
+}
+</script>
+
+</body>
+</html>
