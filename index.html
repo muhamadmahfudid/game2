@@ -145,7 +145,7 @@ const successScreen = document.getElementById('successScreen');
 const NEEDED = 5;
 let score = 0;
 let fails = 0;
-let dodgeRadius = 90; // seberapa dekat mouse dianggap "mengancam"
+let dodgeRadius = 90; 
 
 const taunts = [
   "Ayo coba klik aku!",
@@ -193,7 +193,7 @@ function moveButtonRandom() {
   btn.style.top = newY + 'px';
 }
 
-// posisi awal di tengah
+
 function placeInitial() {
   const maxX = arena.clientWidth - btn.offsetWidth - 8;
   const maxY = arena.clientHeight - btn.offsetHeight - 8;
@@ -203,7 +203,7 @@ function placeInitial() {
 window.addEventListener('load', placeInitial);
 setTimeout(placeInitial, 50);
 
-// makin sering "kabur" duluan sebelum diklik, makin susah seiring skor naik
+
 arena.addEventListener('mousemove', (e) => {
   if (score >= NEEDED) return;
   const arenaRect = arena.getBoundingClientRect();
@@ -214,11 +214,11 @@ arena.addEventListener('mousemove', (e) => {
   const btnCenterY = btnRect.top - arenaRect.top + btnRect.height / 2;
   const dist = Math.hypot(mouseX - btnCenterX, mouseY - btnCenterY);
 
-  // semakin tinggi skor, radius kabur makin lebar (makin ngeselin)
+
   const currentRadius = dodgeRadius + score * 12;
 
   if (dist < currentRadius) {
-    // kemungkinan kabur (tidak 100% biar tetap winnable)
+
     const escapeChance = 0.85;
     if (Math.random() < escapeChance) {
       moveButtonRandom();
@@ -227,7 +227,7 @@ arena.addEventListener('mousemove', (e) => {
   }
 });
 
-// juga kabur dikit tiap beberapa saat biar makin jahil
+
 setInterval(() => {
   if (score < NEEDED && Math.random() < 0.15) {
     moveButtonRandom();
@@ -238,8 +238,8 @@ btn.addEventListener('click', (e) => {
   e.stopPropagation();
   if (score >= NEEDED) return;
 
-  // beri kesempatan klik berhasil, tapi kadang tetap kabur dulu buat ngeselin (sebelum skor tinggi)
-  const successChance = 0.55 + score * 0.05; // makin ke akhir makin gampang biar ga frustasi
+
+  const successChance = 0.55 + score * 0.05; 
   if (Math.random() < successChance) {
     score++;
     scoreText.textContent = `Berhasil: ${score} / ${NEEDED}`;
